@@ -40,14 +40,14 @@ Todos os campos podem ser editados. Um `Id` interno mantém a identidade do alun
 ## Testes
 
 ```sh
-dotnet test
+dotnet test tests/Escola.Tests
 ```
 
 Executar apenas um nível:
 
 ```sh
-dotnet test --filter "FullyQualifiedName!~ApiTests"
-dotnet test --filter "FullyQualifiedName~ApiTests"
+dotnet test tests/Escola.Tests --filter "FullyQualifiedName!~ApiTests"
+dotnet test tests/Escola.Tests --filter "FullyQualifiedName~ApiTests"
 ```
 
 - **Unitários:** regras de RA, nome, datas e enum; criação, listagem, edição e exclusão; duplicidade, inexistência e preservação dos dados após validação rejeitada.
@@ -58,11 +58,24 @@ Cada teste de integração cria seu próprio banco em uma pasta temporária e o 
 Para executar os testes e coletar a cobertura em formato OpenCover:
 
 ```sh
-dotnet test --collect:"XPlat Code Coverage;Format=opencover" --logger trx --results-directory TestResults
+dotnet test tests/Escola.Tests --collect:"XPlat Code Coverage;Format=opencover" --logger trx --results-directory TestResults
 ```
 
 A action do SonarQube executa os testes unitários e de integração e envia a cobertura C# e os resultados dos testes para a análise. Os relatórios também ficam disponíveis no artefato `test-results-and-coverage` da execução no GitHub Actions. Se algum teste falhar ou a cobertura não for gerada, o fluxo falha.
 
+## Testes E2E com Playwright
+
+Os testes E2E usam **Playwright para .NET e xUnit**, escritos em C#, para interagir com a interface e verificar o fluxo completo com a API e o SQLite reais. Cobrem listagem, criação, edição, cancelamento, exclusão com confirmação, RA duplicado e validações de campos. O recarregamento da página verifica que os dados foram persistidos.
+
+Na raiz do projeto, compile os testes e instale o Chromium pelo script gerado pelo pacote NuGet. O comando `pwsh` requer PowerShell 7; não é necessário instalar Node.js ou npm:
+
+```sh
+dotnet build tests/Escola.E2E --configuration Release
+pwsh tests/Escola.E2E/bin/Release/net10.0/playwright.ps1 install chromium
+dotnet test tests/Escola.E2E --configuration Release --no-build --logger trx --logger html --results-directory TestResults/E2E
+```
+
+Cada teste inicia um servidor Kestrel em uma porta livre, com banco SQLite e contexto de navegador exclusivos. Ao terminar, encerra o navegador e o servidor. O banco habitual da aplicação não é usado. O diretório `artifacts/e2e/<id>/` guarda o banco de teste, um screenshot final e um trace de cada cenário, inclusive dos aprovados. O caminho aparece na saída do teste e nos relatórios TRX/HTML. Esses arquivos são ignorados pelo Git e podem ser removidos após a execução.
 ## API
 
 | Método | Rota | Resultado |

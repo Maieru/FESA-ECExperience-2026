@@ -3,6 +3,7 @@
     <Project Path="src/Escola/Escola.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Escola.E2E/Escola.E2E.csproj" />
     <Project Path="tests/Escola.Tests/Escola.Tests.csproj" />
   </Folder>
 </Solution>

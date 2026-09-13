@@ -57,29 +57,48 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" begin /k:"Maieru_FESA-ECExperience-2026" /o:"maieru" /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx"
+          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" begin `
+            /k:"Maieru_FESA-ECExperience-2026" `
+            /o:"maieru" `
+            /d:sonar.token="$env:SONAR_TOKEN" `
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" `
+            /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx"
 
       - name: Build
         run: dotnet build --configuration Release --no-restore --no-incremental
 
-      - name: Run tests and collect coverage
+      - name: Run unit tests and collect coverage
         run: |
-          dotnet test --configuration Release --no-build --no-restore --collect:"XPlat Code Coverage;Format=opencover" --logger trx --results-directory TestResults
+          dotnet test tests/Escola.Tests `
+            --configuration Release `
+            --no-build `
+            --no-restore `
+            --collect:"XPlat Code Coverage;Format=opencover" `
+            --logger trx `
+            --results-directory TestResults/Unit
+
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Get-ChildItem TestResults -Recurse -Filter coverage.opencover.xml)) {
-            throw "O relatório de cobertura não foi gerado."
-          }
+
+      - name: Install Chromium
+        run: |
+          pwsh tests/Escola.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: |
+          dotnet test tests/Escola.E2E `
+            --configuration Release `
+            --no-build `
+            --no-restore `
+            --logger trx `
+            --logger html `
+            --results-directory TestResults/E2E `
+            --environment "E2E_HEADEDLESS=1" `
+
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: End SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" end /d:sonar.token="$env:SONAR_TOKEN"
-
-      - name: Upload test results and coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-and-coverage
-          path: TestResults/
-          if-no-files-found: ignore
+          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" end `
+            /d:sonar.token="$env:SONAR_TOKEN"

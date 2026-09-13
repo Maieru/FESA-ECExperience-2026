@@ -61,3 +61,5 @@ nunit-*.xml
 .dotnet-home/
 src/Escola/dados/
 TestResults/
+node_modules/
+playwright-report/
