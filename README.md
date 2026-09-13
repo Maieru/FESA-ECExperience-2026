@@ -55,6 +55,14 @@ dotnet test --filter "FullyQualifiedName~ApiTests"
 
 Cada teste de integração cria seu próprio banco em uma pasta temporária e o remove ao terminar. O banco da aplicação não é alterado. Os testes automatizados de integração não controlam o navegador.
 
+Para executar os testes e coletar a cobertura em formato OpenCover:
+
+```sh
+dotnet test --collect:"XPlat Code Coverage;Format=opencover" --logger trx --results-directory TestResults
+```
+
+A action do SonarQube executa os testes unitários e de integração e envia a cobertura C# e os resultados dos testes para a análise. Os relatórios também ficam disponíveis no artefato `test-results-and-coverage` da execução no GitHub Actions. Se algum teste falhar ou a cobertura não for gerada, o fluxo falha.
+
 ## API
 
 | Método | Rota | Resultado |
